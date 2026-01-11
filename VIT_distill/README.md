@@ -32,3 +32,27 @@ We ran this experiment for 10 epochs to compare a Baseline Student (trained norm
   - **Alpha ($\alpha$)**: 0.5 (Equal weight to Hard Label Loss and Soft Teacher Loss)
 - **Optimizer**: AdamW, LR=3e-4
 - **Epochs**: 10
+
+## Experiment 2: ViT Base → ResNet18 (Cross-Architecture)
+
+We explored distilling knowledge from a Transformer (ViT) to a CNN (ResNet18). This tests whether the inductive biases of a CNN can learn from the global context of a ViT.
+
+### Model Stats
+
+| Metric | Teacher (ViT Base) | Student (ResNet18) | Reduction |
+| :--- | :--- | :--- | :--- |
+| **Parameters** | ~85.8 M | ~11.2 M | **~7.6x Smaller** |
+| **Type** | Transformer | CNN | Different Architecture |
+
+### Results
+
+| Model Configuration | Best Test Accuracy | Performance Gain |
+| :--- | :--- | :--- |
+| **Teacher Model** | **91.12%** | (Reference) |
+| **Baseline ResNet18** | 78.44% | - |
+| **Distilled ResNet18** | **80.86%** | **+2.42%** (vs Baseline) |
+
+### 🔍 Analysis
+- **Cross-Architecture Success**: Successfully transferred knowledge from a Transformer to a CNN, improving the CNN's performance by **~2.4%**.
+- **Inductive Bias**: While the gain is smaller than ViT-to-ViT (+6.5%), it proves that CNNs can benefit from the "global" perspective of a Transformer teacher.
+- **Robustness**: The distilled ResNet converges faster and achieves a higher peak accuracy than the baseline trained from scratch.
