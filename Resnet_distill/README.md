@@ -34,15 +34,42 @@ We ran this experiment for 10 epochs to compare a Baseline ViT-Tiny (trained nor
 - **Optimizer**: AdamW, LR=3e-4
 - **Epochs**: 10
 
+---
+
+## Experiment 2: ResNet-152 → ResNet-18 (Same-Architecture CNN)
+
+We also explored same-architecture distillation within the CNN family.
+
+### Model Stats
+
+| Metric | Teacher (ResNet-152) | Student (ResNet-18) | Reduction |
+| :--- | :--- | :--- | :--- |
+| **Parameters** | ~58.3 M | ~11.2 M | **~5.2x Smaller** |
+| **Architecture** | CNN (Deep) | CNN (Shallow) | Same Architecture |
+
+### Results
+
+| Model Configuration | Best Test Accuracy | Performance Gain |
+| :--- | :--- | :--- |
+| **Baseline ResNet-18** | 81.02% | - |
+| **Distilled ResNet-18** | **81.96%** | **+0.94%** (vs Baseline) |
+
+### 🔍 Analysis
+- **Same-Architecture Success**: Knowledge transfers efficiently between CNNs of different depths.
+- **Strong Baseline**: ResNet-18 already achieves strong performance (81.02%), leaving less room for improvement.
+- **Compression**: Achieved **5.2x compression** while improving accuracy.
+
+---
+
 ## Key Takeaways
 
-| Distillation Type | Teacher → Student | Improvement |
-| :--- | :--- | :--- |
-| Same Architecture | ViT-Base → ViT-Tiny | +6.47% |
-| Cross-Architecture (T→C) | ViT-Base → ResNet-18 | +2.42% |
-| **Cross-Architecture (C→T)** | **ResNet-152 → ViT-Tiny** | **+1.34%** |
+| Distillation Type | Teacher → Student | Improvement | Compression |
+| :--- | :--- | :--- | :--- |
+| Same Architecture (ViT) | ViT-Base → ViT-Tiny | +6.47% | 15.5x |
+| **Same Architecture (CNN)** | **ResNet-152 → ResNet-18** | **+0.94%** | **5.2x** |
+| Cross-Architecture (C→T) | ResNet-152 → ViT-Tiny | +1.34% | 10.5x |
 
-Cross-architecture distillation works in both directions, though same-architecture distillation tends to yield larger gains.
+Same-architecture distillation works well for both Transformers and CNNs.
 
 ---
 
@@ -53,3 +80,5 @@ Cross-architecture distillation works in both directions, though same-architectu
 | `resnet152_cifar100_teacher.py` | Train ResNet-152 teacher |
 | `baseline_vit_tiny.py` | Train ViT-Tiny baseline |
 | `distill_vit_tiny.py` | Distill ResNet-152 → ViT-Tiny |
+| `baseline_resnet18.py` | Train ResNet-18 baseline |
+| `distill_resnet18.py` | Distill ResNet-152 → ResNet-18 |
