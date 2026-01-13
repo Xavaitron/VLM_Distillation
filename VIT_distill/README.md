@@ -56,3 +56,45 @@ We explored distilling knowledge from a Transformer (ViT) to a CNN (ResNet18). T
 - **Cross-Architecture Success**: Successfully transferred knowledge from a Transformer to a CNN, improving the CNN's performance by **~2.4%**.
 - **Inductive Bias**: While the gain is smaller than ViT-to-ViT (+6.5%), it proves that CNNs can benefit from the "global" perspective of a Transformer teacher.
 - **Robustness**: The distilled ResNet converges faster and achieves a higher peak accuracy than the baseline trained from scratch.
+
+---
+
+## Experiment 3: ViT Base → MobileViT-S (Mobile-Optimized)
+
+We explored distilling ViT-Base into MobileViT-S, a lightweight mobile-optimized hybrid architecture combining CNN and Transformer blocks.
+
+### Model Stats
+
+| Metric | Teacher (ViT Base) | Student (MobileViT-S) | Reduction |
+| :--- | :--- | :--- | :--- |
+| **Parameters** | ~85.8 M | ~5.0 M | **~17.2x Smaller** |
+| **Type** | Transformer | Hybrid (CNN + Transformer) | Mobile-Optimized |
+| **Input Size** | 224x224 | 256x256 | Slightly larger |
+
+### Results
+
+| Model Configuration | Best Test Accuracy | Performance Gain |
+| :--- | :--- | :--- |
+| **Teacher Model** | **91.12%** | (Reference) |
+| **Baseline MobileViT-S** | 83.90% | - |
+| **Distilled MobileViT-S** | **84.45%** | **+0.55%** (vs Baseline) |
+
+### 🔍 Analysis
+- **Strong Baseline**: MobileViT already achieves 83.90% on its own due to its hybrid CNN-Transformer design.
+- **Improved via Distillation**: Distillation still provides a boost to **84.45%**, reaching **~92.7% of teacher accuracy** with only **~6% of parameters**.
+- **Mobile-Ready**: MobileViT-S is optimized for edge deployment with efficient local+global attention mechanisms.
+- **Compression Champion**: Achieves the highest compression ratio (17.2x) while maintaining competitive accuracy.
+
+---
+
+## Scripts Reference
+
+| Script | Description |
+| :--- | :--- |
+| `vit_base_patch16_224_cifar100.py` | Train ViT-Base teacher |
+| `baseline_vit_tiny.py` | Train ViT-Tiny baseline |
+| `distill_vit_tiny.py` | Distill ViT-Base → ViT-Tiny |
+| `baseline_resnet.py` | Train ResNet-18 baseline |
+| `distillation_resnet.py` | Distill ViT-Base → ResNet-18 |
+| `baseline_mobilevit.py` | Train MobileViT-S baseline |
+| `distill_mobilevit.py` | Distill ViT-Base → MobileViT-S |
