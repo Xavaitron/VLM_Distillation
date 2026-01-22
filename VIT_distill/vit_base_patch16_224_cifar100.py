@@ -11,8 +11,8 @@ BATCH_SIZE = 64
 LR_HEAD = 0.003      # High LR for the head
 LR_BODY = 1e-5       # Low LR for fine-tuning the body later
 EPOCHS_HEAD = 1      # Warmup epochs (Head only)
-EPOCHS_FINE = 3      # Fine-tuning epochs (Whole body) - HIGHLY RECOMMENDED for CIFAR-100
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+EPOCHS_FINE = 3      # Fine-tuning epochs (Whole body)
+DEVICE = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
 print(f"Using device: {DEVICE}")
 
