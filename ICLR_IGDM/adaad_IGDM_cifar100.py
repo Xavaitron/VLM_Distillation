@@ -153,7 +153,7 @@ for epoch in range(1,epochs+1):
 
 
 
-    if epoch > 190 :
+    if epoch > 90 :
         test_accs = []
         test_accs_adv = []
         student.eval()
