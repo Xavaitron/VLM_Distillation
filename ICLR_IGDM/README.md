@@ -146,16 +146,20 @@ FC (512 → 100 classes)
 
 ## 📈 Results
 
-### CIFAR-100 (100 epochs, Teacher: BDM, Student: ResNet-18)
+### CIFAR-100 (100 epochs, Student: ResNet-18)
 
-| Method | Robust Accuracy (AutoAttack) | Improvement |
-|--------|------------------------------|-------------|
-| AdaAD (Baseline) | 26.54% | - |
-| **AdaAD + IGDM** | **27.88%** | **+1.34%** |
+| Method | Teacher | Robust Accuracy (AutoAttack) | IGDM Gain |
+|--------|---------|------------------------------|-----------|
+| AdaAD | BDM | 26.54% | - |
+| **AdaAD + IGDM** | BDM | **27.88%** | **+1.34%** |
+| ARD | DEC | 21.52% | - |
+| **ARD + IGDM** | DEC | **24.81%** | **+3.29%** |
 
 ### Key Takeaways
-- **IGDM improves robust accuracy by ~1.3%** over baseline distillation
-- Student (ResNet-18) achieves ~72% of teacher's robustness with **3.2x fewer parameters**
+- **IGDM consistently improves robust accuracy** across different methods and teachers
+- AdaAD + IGDM: **+1.34%** improvement
+- ARD + IGDM: **+3.29%** improvement
+- Student (ResNet-18) achieves strong robustness with **3.2x fewer parameters** than teacher
 - Training: 100 epochs on single A30 GPU
 
 ---
