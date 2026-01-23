@@ -142,7 +142,7 @@ for epoch in range(1,epochs+1):
         progress_bar.prog(step, len(trainloader), epoch, loss.item())
 
 
-    if epoch >190 :
+    if epoch > 90 :
         test_accs = []
         test_accs_adv = []
         student.eval()
@@ -190,7 +190,8 @@ x_total = [x for (x, y) in testloader]
 y_total = [y for (x, y) in testloader]
 x_total = torch.cat(x_total, 0)
 y_total = torch.cat(y_total, 0)
-_, robust_acc = autoattack.run_standard_evaluation(x_total, y_total)
+result = autoattack.run_standard_evaluation(x_total, y_total)
+robust_acc = result[1] if isinstance(result, tuple) else result
 print('final AA',robust_acc)
 if not args.nowand:
     AA_d = {'RESULT_AA': robust_acc}

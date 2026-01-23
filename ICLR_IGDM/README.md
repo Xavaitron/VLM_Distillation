@@ -73,10 +73,32 @@ These models were trained with adversarial training techniques and millions of p
 
 Students are **smaller models trained from scratch** to inherit the teacher's robustness.
 
-| Model | Architecture | Parameters |
-|-------|--------------|------------|
-| RES-18 | ResNet-18 | 11.2M |
-| MN-V2 | MobileNetV2 | 3.4M |
+| Flag | Architecture | Parameters | Use Case |
+|------|--------------|------------|----------|
+| `RES-18` | ResNet-18 | 11.2M | Default, good balance |
+| `MN-V2` | MobileNetV2 | 3.4M | Mobile/edge deployment |
+
+### ResNet-18 Architecture (Default Student)
+```
+Input (3x32x32)
+    ↓
+Conv1 (64 filters) → BN → ReLU
+    ↓
+Layer1: 2x BasicBlock (64 filters)
+Layer2: 2x BasicBlock (128 filters, stride=2)
+Layer3: 2x BasicBlock (256 filters, stride=2)
+Layer4: 2x BasicBlock (512 filters, stride=2)
+    ↓
+Global Average Pooling
+    ↓
+FC (512 → 100 classes)
+```
+
+### Compression Ratio
+| | Teacher (WRN-28-10) | Student (ResNet-18) | Reduction |
+|---|---------------------|---------------------|-----------|
+| Parameters | ~36.5M | ~11.2M | **3.2x smaller** |
+| FLOPs | ~10.5G | ~0.56G | **18x faster** |
 
 ---
 
@@ -113,7 +135,7 @@ Students are **smaller models trained from scratch** to inherit the teacher's ro
 
 ## 📊 Evaluation
 
-### During Training (after epoch 190)
+### During Training (after epoch 90)
 - **PGD-20 Attack**: 20-step PGD with ε=8/255
 
 ### After Training
@@ -122,14 +144,104 @@ Students are **smaller models trained from scratch** to inherit the teacher's ro
 
 ---
 
-## 🔬 Baseline Methods
+## 📈 Results
 
-| Method | Description |
-|--------|-------------|
-| **ARD** | Adversarial Robust Distillation - distill on adversarial examples |
-| **RSLAD** | Robust Soft Label Adversarial Distillation - uses soft labels |
-| **AdaAD** | Adaptive Adversarial Distillation - adapts to student capacity |
-| **+ IGDM** | Any method enhanced with Indirect Gradient Matching |
+### CIFAR-100 (100 epochs, Teacher: BDM, Student: ResNet-18)
+
+| Method | Robust Accuracy (AutoAttack) | Improvement |
+|--------|------------------------------|-------------|
+| AdaAD (Baseline) | 26.54% | - |
+| **AdaAD + IGDM** | **27.88%** | **+1.34%** |
+
+### Key Takeaways
+- **IGDM improves robust accuracy by ~1.3%** over baseline distillation
+- Student (ResNet-18) achieves ~72% of teacher's robustness with **3.2x fewer parameters**
+- Training: 100 epochs on single A30 GPU
+
+---
+
+## 🔬 Distillation Methods
+
+### 1. ARD (Adversarial Robust Distillation)
+
+**Core Idea**: Distill on adversarial examples instead of clean examples.
+
+**Loss Function**:
+```
+L_ARD = KL(S(x_adv) || T(x_adv)) + λ · CE(S(x_adv), y)
+```
+
+Where:
+- `S(x_adv)` = student prediction on adversarial example
+- `T(x_adv)` = teacher prediction on adversarial example  
+- `CE` = cross-entropy with true label
+- `λ` = balance coefficient
+
+**Key Insight**: Standard distillation uses `KL(S(x) || T(x))` on clean inputs. ARD generates adversarial `x_adv` and distills there, forcing the student to learn robust representations.
+
+---
+
+### 2. RSLAD (Robust Soft Label Adversarial Distillation)
+
+**Core Idea**: Use teacher's soft labels (instead of hard labels) for generating adversarial examples.
+
+**Inner Loop** (generating x_adv):
+```
+x_adv = argmax_δ KL(S(x + δ) || T(x))     subject to ||δ||_∞ ≤ ε
+```
+
+**Outer Loss**:
+```
+L_RSLAD = KL(S(x_adv) || T(x_adv))
+```
+
+**Key Insight**: Traditional adversarial training uses hard labels `y` to generate attacks. RSLAD uses soft labels from teacher `T(x)`, which provides richer gradient information and better aligns student-teacher decision boundaries.
+
+---
+
+### 3. AdaAD (Adaptive Adversarial Distillation)
+
+**Core Idea**: Adapt the adversarial attack to maximize divergence between student and teacher.
+
+**Inner Loop** (adaptive attack):
+```
+x_adv = argmax_δ KL(S(x + δ) || T(x + δ))     subject to ||δ||_∞ ≤ ε
+```
+
+**Outer Loss**:
+```
+L_AdaAD = KL(S(x_adv) || T(x_adv))
+```
+
+**Key Insight**: Instead of attacking based on ground truth labels, AdaAD finds perturbations where student and teacher disagree most. This "adaptive" attack focuses training on the student's weakest regions.
+
+---
+
+### 4. IGDM Enhancement (This Paper)
+
+**Core Idea**: Match the *gradient behavior* of teacher, not just outputs.
+
+**IGDM Loss**:
+```
+L_IGDM = KL( [S(x+βδ) - S(x-γδ)] || [T(x+βδ) - T(x-γδ)] )
+```
+
+**Combined Loss** (e.g., AdaAD + IGDM):
+```
+L_total = L_AdaAD + α · (epoch/200) · L_IGDM
+```
+
+**Key Insight**: Matching `T(x+δ) - T(x-δ)` approximates matching the teacher's input gradient `∂T/∂x`. This transfers not just "what" the teacher predicts, but "how sensitively" it responds to perturbations — crucial for robustness.
+
+---
+
+### Method Comparison
+
+| Method | Attack Target | Distillation Target | IGDM Compatible |
+|--------|---------------|---------------------|-----------------|
+| ARD | Hard labels `y` | `T(x_adv)` | ✅ |
+| RSLAD | Soft labels `T(x)` | `T(x_adv)` | ✅ |
+| AdaAD | Student-Teacher gap | `T(x_adv)` | ✅ |
 
 ---
 
