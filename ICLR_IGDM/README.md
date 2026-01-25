@@ -102,34 +102,116 @@ FC (512 → 100 classes)
 
 ---
 
-## 🔄 Training Pipeline
+## 🔄 Training Pipeline (Detailed)
 
+### Hyperparameters
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        TRAINING LOOP                                 │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  1. Load batch (x, y) from CIFAR-100                                │
-│                                                                      │
-│  2. Generate adversarial example x_adv using PGD attack             │
-│     └── 10 steps, ε = 8/255, step_size = 2/255                      │
-│                                                                      │
-│  3. Compute perturbation direction: δ = x_adv - x                   │
-│                                                                      │
-│  4. Get teacher predictions (frozen, no grad):                      │
-│     └── teacher(x), teacher(x+δ), teacher(x-δ), teacher(x_adv)      │
-│                                                                      │
-│  5. Get student predictions:                                        │
-│     └── student(x), student(x+δ), student(x-δ), student(x_adv)      │
-│                                                                      │
-│  6. Compute losses:                                                 │
-│     └── KL loss: student(x_adv) vs teacher(x_adv)                  │
-│     └── IGDM loss: gradient matching                                │
-│                                                                      │
-│  7. Backprop and update student                                     │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
+ε (epsilon) = 8/255 ≈ 0.0314    # Maximum perturbation magnitude
+step_size   = 2/255 ≈ 0.0078    # PGD step size
+α (alpha)   = 20                 # IGDM loss weight
+β (beta)    = 1                  # Forward perturbation scale
+γ (gamma)   = 1                  # Backward perturbation scale
 ```
+
+---
+
+### Step 1: Generate Adversarial Example (x_adv)
+
+**Method**: AdaAD Inner Loss (10-step PGD)
+
+```python
+def adaad_inner_loss(student, teacher, X, steps=10):
+    delta = uniform_random(-ε, ε)  # Start with random noise
+    
+    for _ in range(steps):
+        # AdaAD objective: maximize KL divergence between student and teacher
+        loss = KL(student(X + delta) || teacher(X + delta))
+        
+        # Gradient ascent (maximize divergence)
+        delta = delta + step_size * sign(∇loss)
+        delta = clamp(delta, -ε, ε)  # Project into ε-ball
+    
+    return X + delta  # x_adv
+```
+
+**Key Insight**: Unlike standard PGD (which attacks using ground truth labels), AdaAD finds perturbations where **student and teacher disagree most**.
+
+---
+
+### Step 2: Compute Perturbation Direction
+
+```python
+δ = x_adv - X  # Captures "where the student is weak"
+```
+
+---
+
+### Step 3: Forward Passes
+
+```python
+# Teacher (frozen, no gradients)
+teacher(X), teacher(X + βδ), teacher(X - γδ), teacher(x_adv)
+
+# Student (gradients flow through these)
+student(X), student(X + βδ), student(X - γδ), student(x_adv)
+```
+
+---
+
+### Step 4: Loss Function
+
+**Main KL Loss** (distill on adversarial examples):
+```
+L_KL = KL(student(x_adv) || teacher(x_adv))
+```
+
+**IGDM Loss** (match gradient behavior):
+```
+L_IGDM = KL(student(X+βδ) - student(X-γδ) || teacher(X+βδ) - teacher(X-γδ))
+```
+
+**Why `f(x+δ) - f(x-δ)`?** This approximates the gradient: `∂f/∂x ≈ (f(x+δ) - f(x-δ)) / 2δ`
+
+**Combined Loss with Epoch Scaling**:
+```
+L_total = L_KL + α × (epoch/200) × L_IGDM
+```
+
+| Epoch | IGDM Weight |
+|-------|-------------|
+| 1 | 20 × (1/200) = 0.1 |
+| 50 | 20 × (50/200) = 5.0 |
+| 100 | 20 × (100/200) = 10.0 |
+
+This lets the student first learn basic distillation, then gradually incorporate gradient matching.
+
+---
+
+### Step 5: Evaluation
+
+**PGD-20 (epochs 91-100)**:
+```python
+# Standard PGD attack using TRUE labels (not teacher)
+for _ in range(20):
+    loss = CrossEntropy(student(X + delta), y_true)
+    delta = delta + step_size * sign(∇loss)
+```
+
+**AutoAttack (after training)**: Ensemble of 4 attacks:
+1. APGD-CE: Auto-PGD with Cross-Entropy
+2. APGD-DLR: Auto-PGD with Difference of Logit Ratio
+3. FAB: Fast Adaptive Boundary
+4. Square: Black-box query attack
+
+---
+
+### Training vs Evaluation Attacks
+
+| | Training (AdaAD) | Evaluation (PGD-20) |
+|---|------------------|---------------------|
+| Objective | Max student-teacher divergence | Minimize accuracy (true labels) |
+| Steps | 10 | 20 |
+| Purpose | Find hard examples for learning | Test robustness reliably |
 
 ---
 
