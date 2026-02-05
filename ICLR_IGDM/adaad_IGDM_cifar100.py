@@ -198,7 +198,9 @@ for epoch in range(1,epochs+1):
                 param_group['lr'] *= 0.1
                 
 save_time = time.strftime('%Y-%m-%d', time.localtime(time.time()))
-torch.save(student.state_dict(),'./result_models/'+ args.wandb_name + save_time+ str(args.student) + '.pt')
+model_name = f'adaad_igdm_{args.teacher}_{args.student}_{args.epochs}ep_{save_time}.pt'
+torch.save(student.state_dict(), './result_models/' + model_name)
+print(f'Model saved: {model_name}')
 
 student.eval()
 autoattack = AutoAttack(student, norm='Linf', eps=8/255.0, version='standard')
