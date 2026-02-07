@@ -333,16 +333,81 @@ L_total = L_AdaAD + α · (epoch/200) · L_IGDM
 
 ## 🚀 Quick Start
 
+### Option 1: With Conda (Python 3.10+)
 ```bash
-# Setup
 conda create -n igdm python=3.10 -y && conda activate igdm
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
-pip install robustbench torchattacks
 pip install git+https://github.com/fra31/auto-attack.git
+pip install torchattacks
+pip install robustbench --no-deps
+pip install timm==1.0.9 geotorch torchdiffeq gdown==5.1.0 tqdm numpy Jinja2 pandas wandb
 mv autoattack autoattack_local
+```
 
-# Run
+### Option 2: With venv (Python 3.8 - No Conda)
+```bash
+# Create and activate virtual environment
+python3.8 -m venv ~/igdm_env
+source ~/igdm_env/bin/activate
+pip install --upgrade pip
+
+# Install PyTorch (CUDA 12.4)
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+
+# Install AutoAttack from GitHub (MUST be before robustbench)
+pip install git+https://github.com/fra31/auto-attack.git
+
+# Install TorchAttacks
+pip install torchattacks
+
+# Install RobustBench (no-deps to avoid pyautoattack issue)
+pip install robustbench --no-deps
+
+# Install RobustBench dependencies
+pip install timm==1.0.9 geotorch torchdiffeq gdown==5.1.0 tqdm numpy Jinja2 pandas wandb
+
+# Fix Python 3.8 compatibility (type hints issue)
+python << 'EOF'
+import os, glob
+arch_dir = os.path.expanduser('~/igdm_env/lib/python3.8/site-packages/robustbench/model_zoo/architectures/')
+for filepath in glob.glob(arch_dir + '*.py'):
+    with open(filepath, 'r') as f:
+        content = f.read()
+    if 'from __future__ import annotations' not in content:
+        content = 'from __future__ import annotations\n' + content
+        with open(filepath, 'w') as f:
+            f.write(content)
+print('✅ RobustBench Python 3.8 compatibility fixed!')
+EOF
+
+# Rename local autoattack folder to avoid import conflicts
+mv autoattack autoattack_local
+```
+
+### Verify Installation
+```bash
+python -c "import torch; print(f'✅ PyTorch {torch.__version__}, CUDA: {torch.cuda.is_available()}')"
+python -c "from robustbench.utils import load_model; print('✅ RobustBench OK')"
+python -c "import autoattack; print('✅ AutoAttack OK')"
+python -c "import torchattacks; print('✅ TorchAttacks OK')"
+```
+
+### Run Training
+```bash
+# AdaAD + IGDM (recommended)
 python adaad_IGDM_cifar100.py --epochs 200 --teacher BDM --alpha 20 --beta 1 --gamma 1 --nowand 1
+
+# ARD + IGDM
+python ard_IGDM_cifar100.py --epochs 200 --teacher DEC --alpha 20 --beta 1 --gamma 1 --nowand 1
+
+# RSLAD + IGDM
+python rslad_IGDM_cifar100.py --epochs 200 --teacher BDM --alpha 20 --beta 1 --gamma 1 --nowand 1
+```
+
+### Activate Environment (Future Sessions)
+```bash
+source ~/igdm_env/bin/activate
+cd ~/ICLR_IGDM
 ```
 
 ---
