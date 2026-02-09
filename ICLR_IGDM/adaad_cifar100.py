@@ -190,6 +190,7 @@ for epoch in range(1,epochs+1):
 
 save_time = time.strftime('%Y-%m-%d', time.localtime(time.time()))
 model_name = f'adaad_{args.teacher}_{args.student}_{args.epochs}ep_{save_time}.pt'
+os.makedirs('./result_models', exist_ok=True)
 torch.save(student.state_dict(), './result_models/' + model_name)
 print(f'Model saved: {model_name}')
 
@@ -200,11 +201,27 @@ y_total = [y for (x, y) in testloader]
 x_total = torch.cat(x_total, 0)
 y_total = torch.cat(y_total, 0)
 result = autoattack.run_standard_evaluation(x_total, y_total)
-robust_acc = result[1] if isinstance(result, tuple) else result
-print('final AA',robust_acc)
+aa_robust_acc = result[1] if isinstance(result, tuple) else result
+print('final AA', aa_robust_acc)
 if not args.nowand:
-    AA_d = {'RESULT_AA': robust_acc}
+    AA_d = {'RESULT_AA': aa_robust_acc}
     wandb.log(AA_d)
+
+# Print final results summary
+print("\n" + "="*60)
+print("📊 TRAINING RESULTS SUMMARY")
+print("="*60)
+print(f"Method:          AdaAD (Baseline)")
+print(f"Teacher:         {args.teacher}")
+print(f"Student:         {args.student}")
+print(f"Epochs:          {args.epochs}")
+print("-"*60)
+print(f"Clean Accuracy:  {test_acc*100:.2f}%")
+print(f"PGD-20 Accuracy: {test_acc_adv*100:.2f}%")
+print(f"AutoAttack Acc:  {aa_robust_acc*100:.2f}%")
+print("-"*60)
+print(f"Model saved:     ./result_models/{model_name}")
+print("="*60 + "\n")
 
 if not args.nowand:
     wandb.finish()
