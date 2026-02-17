@@ -198,9 +198,10 @@ x_total = [x for (x, y) in testloader]
 y_total = [y for (x, y) in testloader]
 x_total = torch.cat(x_total, 0)
 y_total = torch.cat(y_total, 0)
-result = autoattack.run_standard_evaluation(x_total, y_total)
-aa_robust_acc = result[1] if isinstance(result, tuple) else result
-aa_robust_acc = float(aa_robust_acc)
+x_adv = autoattack.run_standard_evaluation(x_total, y_total)
+with torch.no_grad():
+    aa_out = student(x_adv.cuda())
+    aa_robust_acc = (aa_out.argmax(1) == y_total.cuda()).float().mean().item()
 print('final AA', aa_robust_acc)
 if not args.nowand:
     AA_d = {'RESULT_AA': aa_robust_acc}
