@@ -2,7 +2,8 @@
 
 # Configuration for 24GB A30 GPUs
 EPOCHS=200
-BATCH_SIZE=256
+CNN_BATCH_SIZE=1024 # ResNet-18 is much smaller, can handle large batches (~16GB)
+VIT_BATCH_SIZE=256  # ViT is large, 256 uses ~18GB
 CNN_GPU="1" # GPU ID for ResNet experiments
 VIT_GPU="2" # GPU ID for ViT experiments
 
@@ -24,15 +25,15 @@ run_cnn_experiments() {
         echo "[CNN GPU $CNN_GPU] =================================="
         
         echo "[CNN GPU $CNN_GPU] Running Normal KD"
-        python train_distill.py --arch cnn --method kd --epochs $EPOCHS --batch-size $BATCH_SIZE --teacher-name "$t" --gpu $CNN_GPU
+        python train_distill.py --arch cnn --method kd --epochs $EPOCHS --batch-size $CNN_BATCH_SIZE --teacher-name "$t" --gpu $CNN_GPU
         sleep 5
 
         echo "[CNN GPU $CNN_GPU] Running AdaAD"
-        python train_distill.py --arch cnn --method adaad --epochs $EPOCHS --batch-size $BATCH_SIZE --teacher-name "$t" --gpu $CNN_GPU
+        python train_distill.py --arch cnn --method adaad --epochs $EPOCHS --batch-size $CNN_BATCH_SIZE --teacher-name "$t" --gpu $CNN_GPU
         sleep 5
 
         echo "[CNN GPU $CNN_GPU] Running AdaAD + IGDM"
-        python train_distill.py --arch cnn --method adaad_igdm --epochs $EPOCHS --batch-size $BATCH_SIZE --teacher-name "$t" --gpu $CNN_GPU
+        python train_distill.py --arch cnn --method adaad_igdm --epochs $EPOCHS --batch-size $CNN_BATCH_SIZE --teacher-name "$t" --gpu $CNN_GPU
         sleep 5
     done
     echo "[CNN GPU $CNN_GPU] All CNN experiments finished!"
@@ -44,15 +45,15 @@ run_vit_experiments() {
     echo "[ViT GPU $VIT_GPU] =================================="
 
     echo "[ViT GPU $VIT_GPU] Running Normal KD"
-    python train_distill.py --arch vit --method kd --epochs $EPOCHS --batch-size $BATCH_SIZE --teacher-name "$VIT_TEACHER_PATH" --gpu $VIT_GPU
+    python train_distill.py --arch vit --method kd --epochs $EPOCHS --batch-size $VIT_BATCH_SIZE --teacher-name "$VIT_TEACHER_PATH" --gpu $VIT_GPU
     sleep 5
 
     echo "[ViT GPU $VIT_GPU] Running AdaAD"
-    python train_distill.py --arch vit --method adaad --epochs $EPOCHS --batch-size $BATCH_SIZE --teacher-name "$VIT_TEACHER_PATH" --gpu $VIT_GPU
+    python train_distill.py --arch vit --method adaad --epochs $EPOCHS --batch-size $VIT_BATCH_SIZE --teacher-name "$VIT_TEACHER_PATH" --gpu $VIT_GPU
     sleep 5
 
     echo "[ViT GPU $VIT_GPU] Running AdaAD + IGDM"
-    python train_distill.py --arch vit --method adaad_igdm --epochs $EPOCHS --batch-size $BATCH_SIZE --teacher-name "$VIT_TEACHER_PATH" --gpu $VIT_GPU
+    python train_distill.py --arch vit --method adaad_igdm --epochs $EPOCHS --batch-size $VIT_BATCH_SIZE --teacher-name "$VIT_TEACHER_PATH" --gpu $VIT_GPU
     echo "[ViT GPU $VIT_GPU] All ViT experiments finished!"
 }
 
