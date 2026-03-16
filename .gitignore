@@ -1,4 +1,29 @@
 VIT_experiment/result_models/
 result_models/
 models/
+
+# PyTorch Checkpoints and Weights
 *.pt
+*.pth
+*.ckpt
+*.bin
+*.onnx
+*.h5
+
+# Datasets
+data/
+datasets/
+CIFAR100/
+cifar-100-python/
+*.tar.gz
+*.zip
+
+# Logs
+logs/
+tb_logs/
+runs/
+wandb/
+
+# Python caching
+__pycache__/
+*.pyc
