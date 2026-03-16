@@ -15,9 +15,12 @@ def main():
     parser = argparse.ArgumentParser(description='Distillation Training')
     parser.add_argument('--arch', type=str, default='cnn', choices=['cnn', 'vit'], help='Model architecture family')
     parser.add_argument('--method', type=str, default='kd', choices=['kd', 'adaad', 'adaad_igdm'], help='Distillation method')
-    parser.add_argument('--epochs', type=int, default=150, help='Number of epochs')
+    parser.add_argument('--epochs', type=int, default=200, help='Number of epochs')
     parser.add_argument('--batch-size', type=int, default=256, help='Batch size (256-512 good for 24GB VRAM)')
     parser.add_argument('--lr', type=float, default=0.1, help='Learning rate')
+    parser.add_argument('--alpha', type=float, default=20.0, help='IGDM loss weight')
+    parser.add_argument('--beta', type=float, default=1.0, help='Forward perturbation scale for IGDM')
+    parser.add_argument('--gamma', type=float, default=1.0, help='Backward perturbation scale for IGDM')
     parser.add_argument('--seed', type=int, default=0, help='Random seed')
     parser.add_argument('--teacher-name', type=str, default='Wang2023Better_WRN-28-10', help='RobustBench teacher name or custom path')
     parser.add_argument('--gpu', type=str, default='0', help='Comma separated list of GPU(s) to use.')
@@ -102,19 +105,35 @@ def main():
                 loss = kl_clean + kl_adv
                 
             elif args.method == 'adaad_igdm':
-                # IGDM uses the modified inner loss
-                X_adv = igdm_inner_loss(student, teacher, X, step_size=2/255.0, steps=10, epsilon=8/255.0)
+                # Generate adversarial examples using standard AdaAD inner loss
+                X_adv = adaad_inner_loss(student, teacher, X, step_size=2/255.0, steps=10, epsilon=8/255.0)
+                
+                # Compute IGDM perturbation
+                delta = X_adv - X
+                
+                with torch.no_grad():
+                    teacher_clean = teacher(X)
+                    teacher_adv = teacher(X_adv)
+                    teacher_plus = teacher(X + args.beta * delta)
+                    teacher_minus = teacher(X - args.gamma * delta)
                 
                 # Forward passes
                 student_clean = student(X)
                 student_adv = student(X_adv)
-                with torch.no_grad():
-                    teacher_clean = teacher(X)
-                    teacher_adv = teacher(X_adv)
+                student_plus = student(X + args.beta * delta)
+                student_minus = student(X - args.gamma * delta)
                 
+                # KD Losses (Clean + Adv)
                 kl_clean = kd_loss(student_clean, teacher_clean)
                 kl_adv = kd_loss(student_adv, teacher_adv)
-                loss = kl_clean + kl_adv
+                
+                # IGDM Gradient Matching Loss
+                criterion_kl = nn.KLDivLoss(reduction="batchmean")
+                ours_loss = criterion_kl(F.log_softmax(student_plus - student_minus, dim=1), 
+                                         F.softmax((teacher_plus - teacher_minus).detach(), dim=1))
+                
+                # Combined Loss with Epoch Scaling
+                loss = kl_clean + kl_adv + args.alpha * (epoch / args.epochs) * ours_loss
 
             loss.backward()
             optimizer.step()
@@ -124,9 +143,19 @@ def main():
                 print(f"Epoch {epoch}/{args.epochs} Step {step}/{len(trainloader)} Loss: {loss.item():.4f}")
 
         # Evaluate at the end of epoch
-        if epoch % 1 == 0:
+        if epoch > 90 or epoch == args.epochs:
             clean_acc, pgd_acc, fgsm_acc, cw_acc, aa_acc = eval_robustness(student, testloader, device)
             print(f"Epoch {epoch} Results: Clean Acc: {clean_acc*100:.2f}%, PGD20 Acc: {pgd_acc*100:.2f}%, FGSM Acc: {fgsm_acc*100:.2f}%, C&W Acc: {cw_acc*100:.2f}%, AA Acc: {aa_acc*100:.2f}%")
+        else:
+            student.eval()
+            correct = 0
+            with torch.no_grad():
+                for X_test, y_test in testloader:
+                    X_test, y_test = X_test.to(device), y_test.to(device)
+                    correct += (student(X_test).argmax(1) == y_test).sum().item()
+            clean_acc = correct / len(testloader.dataset)
+            pgd_acc, fgsm_acc, cw_acc, aa_acc = 0.0, 0.0, 0.0, 0.0
+            print(f"Epoch {epoch} Results: Clean Acc: {clean_acc*100:.2f}% (Robust Eval Skipped until Epoch > 90 to save time)")
 
     # Save final model
     save_name = f"{args.arch}_{args.method}_epochs_{args.epochs}.pt"

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration for 24GB A30 GPUs
-EPOCHS=150
+EPOCHS=200
 BATCH_SIZE=256
 CNN_GPU="1" # GPU ID for ResNet experiments
 VIT_GPU="2" # GPU ID for ViT experiments
