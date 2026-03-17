@@ -142,8 +142,8 @@ def main():
             if step % 50 == 0:
                 print(f"Epoch {epoch}/{args.epochs} Step {step}/{len(trainloader)} Loss: {loss.item():.4f}")
 
-        # Evaluate at the end of epoch
-        if epoch > 190 or epoch == args.epochs:
+        # Evaluate at the end of training only
+        if epoch == args.epochs:
             clean_acc, pgd_acc, fgsm_acc, cw_acc, aa_acc = eval_robustness(student, testloader, device)
             print(f"Epoch {epoch} Results: Clean Acc: {clean_acc*100:.2f}%, PGD20 Acc: {pgd_acc*100:.2f}%, FGSM Acc: {fgsm_acc*100:.2f}%, C&W Acc: {cw_acc*100:.2f}%, AA Acc: {aa_acc*100:.2f}%")
         else:
@@ -155,7 +155,7 @@ def main():
                     correct += (student(X_test).argmax(1) == y_test).sum().item()
             clean_acc = correct / len(testloader.dataset)
             pgd_acc, fgsm_acc, cw_acc, aa_acc = 0.0, 0.0, 0.0, 0.0
-            print(f"Epoch {epoch} Results: Clean Acc: {clean_acc*100:.2f}% (Robust Eval Skipped until Epoch > 190 to save time)")
+            print(f"Epoch {epoch} Results: Clean Acc: {clean_acc*100:.2f}% (Robust Eval Skipped until final epoch to save time)")
 
     # Save final model
     save_name = f"{args.arch}_{args.method}_epochs_{args.epochs}.pt"
