@@ -35,7 +35,9 @@ def main():
     torch.cuda.manual_seed_all(args.seed)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    img_size = 32 if args.arch == 'cnn' else 224
+    # Cross-architecture: Both CNN and ViT will take 32x32 from dataloader to save VRAM and keep PGD fast.
+    # The ViT student will internally upsample to 224x224 in its forward pass.
+    img_size = 32
     trainloader, testloader = get_cifar100_dataloaders(batch_size=args.batch_size, img_size=img_size)
 
     # Initialize models
@@ -45,10 +47,11 @@ def main():
         teacher = get_cnn_teacher(teacher_name=args.teacher_name)
     else:
         student = get_vit_student()
-        teacher = get_vit_teacher()
+        # CROSS-ARCHITECTURE DISTILLATION: Load the robust CNN teacher for the ViT student
+        teacher = get_cnn_teacher(teacher_name=args.teacher_name)
         if os.path.exists(args.teacher_name):
             teacher.load_state_dict(torch.load(args.teacher_name, map_location=device))
-            print(f"Loaded ViT teacher weights from {args.teacher_name}")
+            print(f"Loaded CNN teacher weights from {args.teacher_name}")
 
     student = student.to(device)
     teacher = teacher.to(device)

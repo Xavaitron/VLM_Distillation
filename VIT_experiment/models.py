@@ -24,14 +24,25 @@ def get_cnn_teacher(teacher_name='Wang2023Better_WRN-28-10'):
     model = load_model(model_name=teacher_name, dataset='cifar100', threat_model='Linf')
     return model
 
+import torch.nn.functional as F
+
+class ViTStudentWrapper(nn.Module):
+    def __init__(self, vit_model):
+        super().__init__()
+        self.vit = vit_model
+        
+    def forward(self, x):
+        # Upsample 32x32 from dataloader to 224x224 expected by the Vision Transformer
+        # This allows fast PGD generation on the 32x32 space!
+        x_up = F.interpolate(x, size=(224, 224), mode='bicubic', align_corners=False)
+        return self.vit(x_up)
+
 def get_vit_student():
-    # A small ViT suitable for 32x32 inputs from timm
-    # Alternatively, use a standard ViT with resized inputs (e.g. 224x224)
-    # The user implied using ViT "instead of CNNs". We'll use a standard small ViT structure.
-    # Note: For strict 32x32, we might want vit_tiny_patch4_32x32, but let's see what's available
     model = timm.create_model('vit_tiny_patch16_224', pretrained=False, num_classes=100)
-    return model
+    return ViTStudentWrapper(model)
 
 def get_vit_teacher():
-    model = timm.create_model('vit_base_patch16_224', pretrained=False, num_classes=100)
+    # Loading a highly accurate (93.16%) ViT base model fine-tuned on CIFAR-100 from Hugging Face via timm
+    print("Downloading/Loading pre-trained CIFAR-100 ViT teacher from HuggingFace Hub...")
+    model = timm.create_model('hf_hub:edadaltocg/vit_base_patch16_224_in21k_ft_cifar100', pretrained=True, num_classes=100)
     return model

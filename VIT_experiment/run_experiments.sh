@@ -8,12 +8,11 @@ VIT_BATCH_SIZE=256  # ViT is large, 256 uses ~18GB
 CNN_GPU="1" # GPU ID for ResNet experiments
 VIT_GPU="2" # GPU ID for ViT experiments
 
-# For CNNs, we use the 3 RobustBench models specified in the paper:
-# BDM (Wang), DEC (Cui), and LTD (Chen)
-declare -a CNN_TEACHERS=("Wang2023Better_WRN-28-10" "Cui2023Decoupled_WRN-28-10" "Chen2021LTD_WRN34_10")
+# For CNNs, we use the 1 RobustBench model specified:
+declare -a CNN_TEACHERS=("Wang2023Better_WRN-28-10")
 
-# For ViT, specify the path to your downloaded/trained ViT teacher weights.
-VIT_TEACHER_PATH=""
+# For ViT Cross-Architecture Distillation, we pass the robust CNN teacher name.
+VIT_TEACHER_PATH="Wang2023Better_WRN-28-10"
 
 echo "Starting Distillation Experiments..."
 
