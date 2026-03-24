@@ -25,15 +25,15 @@ run_cnn_experiments() {
         echo "[CNN GPU $CNN_GPU] =================================="
         
         echo "[CNN GPU $CNN_GPU] Running Normal KD"
-        python train_distill.py --arch cnn --method kd --epochs $EPOCHS --batch-size $CNN_BATCH_SIZE --teacher-name "$t" --gpu $CNN_GPU
+        python3 train_distill.py --arch cnn --method kd --epochs $EPOCHS --batch-size $CNN_BATCH_SIZE --teacher-name "$t" --gpu $CNN_GPU
         sleep 5
 
         echo "[CNN GPU $CNN_GPU] Running AdaAD"
-        python train_distill.py --arch cnn --method adaad --epochs $EPOCHS --batch-size $CNN_BATCH_SIZE --teacher-name "$t" --gpu $CNN_GPU
+        python3 train_distill.py --arch cnn --method adaad --epochs $EPOCHS --batch-size $CNN_BATCH_SIZE --teacher-name "$t" --gpu $CNN_GPU
         sleep 5
 
         echo "[CNN GPU $CNN_GPU] Running AdaAD + IGDM"
-        python train_distill.py --arch cnn --method adaad_igdm --epochs $EPOCHS --batch-size $CNN_BATCH_SIZE --teacher-name "$t" --gpu $CNN_GPU
+        python3 train_distill.py --arch cnn --method adaad_igdm --epochs $EPOCHS --batch-size $CNN_BATCH_SIZE --teacher-name "$t" --gpu $CNN_GPU
         sleep 5
     done
     echo "[CNN GPU $CNN_GPU] All CNN experiments finished!"
@@ -45,15 +45,15 @@ run_vit_experiments() {
     echo "[ViT GPU $VIT_GPU] =================================="
 
     echo "[ViT GPU $VIT_GPU] Running Normal KD"
-    python train_distill.py --arch vit --method kd --epochs $EPOCHS --batch-size $VIT_BATCH_SIZE --teacher-name "$VIT_TEACHER_PATH" --gpu $VIT_GPU
+    python3 train_distill.py --arch vit --method kd --epochs $EPOCHS --batch-size $VIT_BATCH_SIZE --teacher-name "$VIT_TEACHER_PATH" --gpu $VIT_GPU
     sleep 5
 
     echo "[ViT GPU $VIT_GPU] Running AdaAD"
-    python train_distill.py --arch vit --method adaad --epochs $EPOCHS --batch-size $VIT_BATCH_SIZE --teacher-name "$VIT_TEACHER_PATH" --gpu $VIT_GPU
+    python3 train_distill.py --arch vit --method adaad --epochs $EPOCHS --batch-size $VIT_BATCH_SIZE --teacher-name "$VIT_TEACHER_PATH" --gpu $VIT_GPU
     sleep 5
 
     echo "[ViT GPU $VIT_GPU] Running AdaAD + IGDM"
-    python train_distill.py --arch vit --method adaad_igdm --epochs $EPOCHS --batch-size $VIT_BATCH_SIZE --teacher-name "$VIT_TEACHER_PATH" --gpu $VIT_GPU
+    python3 train_distill.py --arch vit --method adaad_igdm --epochs $EPOCHS --batch-size $VIT_BATCH_SIZE --teacher-name "$VIT_TEACHER_PATH" --gpu $VIT_GPU
     echo "[ViT GPU $VIT_GPU] All ViT experiments finished!"
 }
 
