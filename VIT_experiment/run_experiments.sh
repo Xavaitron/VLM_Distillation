@@ -3,8 +3,8 @@ set -e
 
 # Configuration for 24GB A30 GPUs
 EPOCHS=200
-CNN_BATCH_SIZE=256 # Lowered to 256 to avoid OOM during adversarial generation
-VIT_BATCH_SIZE=256  # ViT is large, 256 uses ~18GB
+CNN_BATCH_SIZE=64 # Lowered to 256 to avoid OOM during adversarial generation
+VIT_BATCH_SIZE=64  # ViT is large, 256 uses ~18GB
 CNN_GPU="1" # GPU ID for ResNet experiments
 VIT_GPU="2" # GPU ID for ViT experiments
 
