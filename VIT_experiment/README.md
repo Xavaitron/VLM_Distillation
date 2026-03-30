@@ -64,3 +64,18 @@ The pipeline evaluates student models against multiple rigorous attacks at the e
 - **AutoAttack Accuracy** (Standard evaluation)
 
 Check the terminal window or inspect `training_results.csv` to view the comprehensive evaluation of each model architecture and distillation method.
+
+---
+
+## 📈 Experimental Results (WRN-28-10 Teacher)
+
+Below is a summary of the metrics for each model architecture and distillation method:
+
+| Architecture | Method | Clean Acc (%) | FGSM Acc (%) | PGD-20 Acc (%) | C&W Acc (%) | AA Acc (%) |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **CNN** | KD | 73.87 | 26.12 | 1.23 | 0.54 | 0.03 |
+| **CNN** | AdaAD | 66.15 | 36.37 | 31.13 | 27.66 | 25.96 |
+| **CNN** | AdaAD+IGDM | 65.21 | 37.97 | 34.24 | 29.80 | 28.27 |
+| **ViT** | KD | 41.84 | 0.47 | 0.01 | 0.00 | 0.00 |
+| **ViT** | AdaAD | 38.63 | 15.24 | 10.97 | 8.11 | 7.57 |
+| **ViT** | AdaAD+IGDM | 43.34 | 35.43 | 30.61 | 26.47 | 24.93 |
