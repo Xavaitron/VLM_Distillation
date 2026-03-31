@@ -41,8 +41,14 @@ def get_vit_student():
     model = timm.create_model('vit_tiny_patch16_224', pretrained=False, num_classes=100)
     return ViTStudentWrapper(model)
 
-def get_vit_teacher():
-    # Loading a highly accurate (93.16%) ViT base model fine-tuned on CIFAR-100 from Hugging Face via timm
-    print("Downloading/Loading pre-trained CIFAR-100 ViT teacher from HuggingFace Hub...")
-    model = timm.create_model('hf_hub:edadaltocg/vit_base_patch16_224_in21k_ft_cifar100', pretrained=True, num_classes=100)
+def get_vit_small_student(pretrained=True):
+    model = timm.create_model('vit_small_patch16_224', pretrained=pretrained, num_classes=100)
+    return ViTStudentWrapper(model)
+
+def get_vit_teacher(checkpoint_path='result_models/vit_small_adversarial_pgd10_epochs_200.pt'):
+    # Load the adversarially trained ViT-Small as the robust teacher
+    print(f"Loading adversarially trained ViT-Small teacher from: {checkpoint_path}")
+    model = get_vit_small_student(pretrained=False)
+    state_dict = torch.load(checkpoint_path, map_location='cpu')
+    model.load_state_dict(state_dict)
     return model
