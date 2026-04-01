@@ -11,8 +11,8 @@ VIT_GPU="2" # GPU ID for ViT experiments
 # For CNNs, we use the 1 RobustBench model specified:
 declare -a CNN_TEACHERS=("Wang2023Better_WRN-28-10")
 
-# For ViT Cross-Architecture Distillation, we pass the robust CNN teacher name.
-VIT_TEACHER_PATH="Wang2023Better_WRN-28-10"
+# For ViT-to-ViT Distillation, we pass the robust ViT teacher name.
+VIT_TEACHER_PATH="Debenedetti2022Light_XCiT-S12"
 
 echo "Starting Distillation Experiments..."
 

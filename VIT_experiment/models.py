@@ -41,14 +41,9 @@ def get_vit_student():
     model = timm.create_model('vit_tiny_patch16_224', pretrained=False, num_classes=100)
     return ViTStudentWrapper(model)
 
-def get_vit_small_student(pretrained=True):
-    model = timm.create_model('vit_small_patch16_224', pretrained=pretrained, num_classes=100)
-    return ViTStudentWrapper(model)
-
-def get_vit_teacher(checkpoint_path='result_models/vit_small_adversarial_pgd10_epochs_200.pt'):
-    # Load the adversarially trained ViT-Small as the robust teacher
-    print(f"Loading adversarially trained ViT-Small teacher from: {checkpoint_path}")
-    model = get_vit_small_student(pretrained=False)
-    state_dict = torch.load(checkpoint_path, map_location='cpu')
-    model.load_state_dict(state_dict)
+def get_vit_teacher(teacher_name='Debenedetti2022Light_XCiT-S12'):
+    from robustbench.utils import load_model
+    # Robust XCiT-S12 from RobustBench (~26M params, 62.80% clean, 27.16% robust on CIFAR-100 Linf)
+    print(f"Loading robustbench ViT teacher: {teacher_name}...")
+    model = load_model(model_name=teacher_name, dataset='cifar100', threat_model='Linf')
     return model

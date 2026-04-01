@@ -45,13 +45,12 @@ def main():
         student = get_cnn_student()
         # Loading the exact BDM teacher from robustbench
         teacher = get_cnn_teacher(teacher_name=args.teacher_name)
+        teacher_arch = 'cnn'
     else:
         student = get_vit_student()
-        # CROSS-ARCHITECTURE DISTILLATION: Load the robust CNN teacher for the ViT student
-        teacher = get_cnn_teacher(teacher_name=args.teacher_name)
-        if os.path.exists(args.teacher_name):
-            teacher.load_state_dict(torch.load(args.teacher_name, map_location=device))
-            print(f"Loaded CNN teacher weights from {args.teacher_name}")
+        # ViT-to-ViT DISTILLATION: Load the robust ViT teacher for the ViT student
+        teacher = get_vit_teacher(teacher_name=args.teacher_name)
+        teacher_arch = 'vit'
 
     student = student.to(device)
     teacher = teacher.to(device)
@@ -161,7 +160,7 @@ def main():
             print(f"Epoch {epoch} Results: Clean Acc: {clean_acc*100:.2f}% (Robust Eval Skipped until final epoch to save time)")
 
     # Save final model
-    save_name = f"{args.arch}_{args.method}_epochs_{args.epochs}.pt"
+    save_name = f"{args.arch}_{teacher_arch}teacher_{args.method}_epochs_{args.epochs}.pt"
     torch.save(student.state_dict(), os.path.join('result_models', save_name))
     print(f"Saved final robust model to {save_name}")
 
