@@ -9,7 +9,7 @@ from attacks import eval_robustness
 
 def main():
     parser = argparse.ArgumentParser(description='Evaluate Teacher Models and log to training_results.csv')
-    parser.add_argument('--batch-size', type=int, default=64, help='Batch size for evaluation')
+    parser.add_argument('--batch-size', type=int, default=32, help='Batch size for evaluation')
     parser.add_argument('--gpu', type=str, default='0', help='GPU ID to use')
     args = parser.parse_args()
 
@@ -19,12 +19,6 @@ def main():
     _, testloader = get_cifar100_dataloaders(batch_size=args.batch_size, img_size=32)
 
     teachers = [
-        {
-            'name': 'Wang2023Better_WRN-28-10',
-            'arch': 'CNN',
-            'method': 'TEACHER',
-            'loader': lambda: get_cnn_teacher('Wang2023Better_WRN-28-10'),
-        },
         {
             'name': 'Debenedetti2022Light_XCiT-S12',
             'arch': 'VIT',
