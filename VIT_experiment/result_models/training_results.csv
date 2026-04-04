@@ -1,8 +1,9 @@
-Date               , Architecture, Method    , Teacher                 , Batch Size, Epochs, Clean Acc (%), FGSM Acc (%), PGD20 Acc (%), C&W Acc (%), AA Acc (%)
-2026-04-01 18:23:25, CNN         , TEACHER   , Wang2023Better_WRN-28-10,         64, -     ,         72.58,        47.01,         44.31,       39.63,      38.81
-2026-03-26 08:02:14, CNN         , KD        , Wang2023Better_WRN-28-10,         64, 200   ,         73.87,        26.12,          1.23,        0.54,       0.03
-2026-03-28 05:35:24, CNN         , ADAAD     , Wang2023Better_WRN-28-10,         64, 200   ,         66.15,        36.37,         31.13,       27.66,      25.96
-2026-03-29 16:28:25, CNN         , ADAAD_IGDM, Wang2023Better_WRN-28-10,         64, 200   ,         65.21,        37.97,         34.24,       29.80,      28.27
-2026-03-28 16:57:31, VIT         , KD        , Wang2023Better_WRN-28-10,         64, 200   ,         41.84,         0.47,          0.01,        0.00,       0.00
-2026-03-31 02:03:04, VIT         , ADAAD     , Wang2023Better_WRN-28-10,         64, 200   ,         38.02,        14.95,         14.05,       10.92,       9.73
-2026-04-01 18:45:20, VIT         , ADAAD_IGDM, Wang2023Better_WRN-28-10,         64, 200   ,         32.80,        16.96,         16.65,       13.26,      12.44
+Date               , Architecture, Method    , Teacher                      , Batch Size, Epochs, Clean Acc (%), FGSM Acc (%), PGD20 Acc (%), C&W Acc (%), AA Acc (%)
+2026-04-01 18:23:25, CNN         , TEACHER   , Wang2023Better_WRN-28-10     ,         64, -     ,         72.58,        47.01,         44.31,       39.63,      38.81
+2026-03-26 08:02:14, CNN         , KD        , Wang2023Better_WRN-28-10     ,         64, 200   ,         73.87,        26.12,          1.23,        0.54,       0.03
+2026-03-28 05:35:24, CNN         , ADAAD     , Wang2023Better_WRN-28-10     ,         64, 200   ,         66.15,        36.37,         31.13,       27.66,      25.96
+2026-03-29 16:28:25, CNN         , ADAAD_IGDM, Wang2023Better_WRN-28-10     ,         64, 200   ,         65.21,        37.97,         34.24,       29.80,      28.27
+2026-03-28 16:57:31, VIT         , KD        , Wang2023Better_WRN-28-10     ,         64, 200   ,         41.84,         0.47,          0.01,        0.00,       0.00
+2026-03-31 02:03:04, VIT         , ADAAD     , Wang2023Better_WRN-28-10     ,         64, 200   ,         38.02,        14.95,         14.05,       10.92,       9.73
+2026-04-01 18:45:20, VIT         , ADAAD_IGDM, Wang2023Better_WRN-28-10     ,         64, 200   ,         32.80,        16.96,         16.65,       13.26,      12.44
+2026-04-02 16:58:12, VIT         , KD        , Debenedetti2022Light_XCiT-S12,        256, 200   ,         39.86,         1.77,          0.29,        0.38,       0.06
