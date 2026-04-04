@@ -80,29 +80,38 @@ def eval_robustness(model, testloader, device):
     for X, y in testloader:
         X, y = X.to(device), y.to(device)
         
-        X_pgd = attack_pgd(model, X, y, attack_iters=20, step_size=2.0/255.0, epsilon=8.0/255.0)
-        X_fgsm = attack_fgsm(model, X, y, epsilon=8.0/255.0)
-        X_cw = attack_cw_linf(model, X, y, attack_iters=20, step_size=2.0/255.0, epsilon=8.0/255.0)
-        
+        # --- Clean accuracy ---
         with torch.no_grad():
             with torch.amp.autocast('cuda'):
-                logits = model(X)
-                logits_pgd = model(X_pgd)
-                logits_fgsm = model(X_fgsm)
-                logits_cw = model(X_cw)
-            
-        preds = torch.argmax(logits, dim=1)
-        preds_pgd = torch.argmax(logits_pgd, dim=1)
-        preds_fgsm = torch.argmax(logits_fgsm, dim=1)
-        preds_cw = torch.argmax(logits_cw, dim=1)
-        
+                preds = model(X).argmax(1)
         test_accs.append((preds == y).cpu().numpy())
+        del preds
+        
+        # --- PGD-20 (sequential: generate → infer → free) ---
+        X_pgd = attack_pgd(model, X, y, attack_iters=20, step_size=2.0/255.0, epsilon=8.0/255.0)
+        with torch.no_grad():
+            with torch.amp.autocast('cuda'):
+                preds_pgd = model(X_pgd).argmax(1)
         test_accs_adv.append((preds_pgd == y).cpu().numpy())
+        del X_pgd, preds_pgd
+        torch.cuda.empty_cache()
+        
+        # --- FGSM (sequential) ---
+        X_fgsm = attack_fgsm(model, X, y, epsilon=8.0/255.0)
+        with torch.no_grad():
+            with torch.amp.autocast('cuda'):
+                preds_fgsm = model(X_fgsm).argmax(1)
         test_accs_fgsm.append((preds_fgsm == y).cpu().numpy())
+        del X_fgsm, preds_fgsm
+        torch.cuda.empty_cache()
+        
+        # --- C&W (sequential) ---
+        X_cw = attack_cw_linf(model, X, y, attack_iters=20, step_size=2.0/255.0, epsilon=8.0/255.0)
+        with torch.no_grad():
+            with torch.amp.autocast('cuda'):
+                preds_cw = model(X_cw).argmax(1)
         test_accs_cw.append((preds_cw == y).cpu().numpy())
-
-        # Free attack tensors between batches
-        del X_pgd, X_fgsm, X_cw, logits, logits_pgd, logits_fgsm, logits_cw
+        del X_cw, preds_cw
         torch.cuda.empty_cache()
         
     clean_acc = np.mean(np.concatenate(test_accs))
