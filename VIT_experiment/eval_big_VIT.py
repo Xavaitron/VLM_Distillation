@@ -38,6 +38,7 @@ def main():
         model = t['loader']().to(device)
         model.eval()
 
+        # AMP is handled inside eval_robustness and attack functions
         clean_acc, pgd_acc, fgsm_acc, cw_acc, aa_acc = eval_robustness(model, testloader, device)
 
         print(f"  Clean: {clean_acc*100:.2f}%  FGSM: {fgsm_acc*100:.2f}%  "

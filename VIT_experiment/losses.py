@@ -20,10 +20,12 @@ def adaad_inner_loss(model, teacher_model, x_natural, step_size=2/255.0, steps=1
     for _ in range(steps):
         x_adv.requires_grad_()
         with torch.enable_grad():
-            loss_kl = criterion_kl(F.log_softmax(model(x_adv), dim=1),
-                                   F.softmax(teacher_model(x_adv), dim=1))
-            loss_kl = torch.sum(loss_kl)
-        grad = torch.autograd.grad(loss_kl, [x_adv])[0]
+            with torch.cuda.amp.autocast():
+                loss_kl = criterion_kl(F.log_softmax(model(x_adv), dim=1),
+                                       F.softmax(teacher_model(x_adv), dim=1))
+                loss_kl = torch.sum(loss_kl)
+        # Scale gradients back to float32 for the PGD step
+        grad = torch.autograd.grad(loss_kl.float(), [x_adv])[0]
         x_adv = x_adv.detach() + step_size * torch.sign(grad.detach())
         x_adv = torch.min(torch.max(x_adv, x_natural - epsilon), x_natural + epsilon)
         x_adv = torch.clamp(x_adv, 0.0, 1.0)
@@ -44,17 +46,18 @@ def igdm_inner_loss(model, teacher_model, x_natural, step_size=2/255.0, steps=10
         delta = x_adv - x_natural
         x_adv.requires_grad_()
         with torch.enable_grad():
-            teacher_minus = teacher_model(x_adv - 2 * delta)
-            student_minus = model(x_adv - 2 * delta)
+            with torch.cuda.amp.autocast():
+                teacher_minus = teacher_model(x_adv - 2 * delta)
+                student_minus = model(x_adv - 2 * delta)
 
-            student_plus = model(x_adv)
-            teacher_plus = teacher_model(x_adv)
+                student_plus = model(x_adv)
+                teacher_plus = teacher_model(x_adv)
+                
+                loss_kl = criterion_kl(F.log_softmax(student_plus - student_minus, dim=1), 
+                                       F.softmax(teacher_plus - teacher_minus, dim=1))
+                loss_kl = torch.sum(loss_kl)
             
-            loss_kl = criterion_kl(F.log_softmax(student_plus - student_minus, dim=1), 
-                                   F.softmax(teacher_plus - teacher_minus, dim=1))
-            loss_kl = torch.sum(loss_kl)
-            
-        grad = torch.autograd.grad(loss_kl, [x_adv])[0]
+        grad = torch.autograd.grad(loss_kl.float(), [x_adv])[0]
         x_adv = x_adv.detach() + step_size * torch.sign(grad.detach())
         x_adv = torch.min(torch.max(x_adv, x_natural - epsilon), x_natural + epsilon)
         x_adv = torch.clamp(x_adv, 0.0, 1.0)

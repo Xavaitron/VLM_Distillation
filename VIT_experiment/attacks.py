@@ -17,10 +17,11 @@ def attack_pgd(model, X, y, attack_iters=20, step_size=2.0/255.0, epsilon=8.0/25
     for _ in range(attack_iters):
         X_pgd.requires_grad_()
         with torch.enable_grad():
-            logits = model(X_pgd)
-            loss = ce_loss(logits, y)
+            with torch.cuda.amp.autocast():
+                logits = model(X_pgd)
+                loss = ce_loss(logits, y)
         
-        grad = torch.autograd.grad(loss, [X_pgd])[0]
+        grad = torch.autograd.grad(loss.float(), [X_pgd])[0]
         X_pgd = X_pgd.detach() + step_size * torch.sign(grad.detach())
         X_pgd = torch.min(torch.max(X_pgd, X - epsilon), X + epsilon)
         X_pgd = torch.clamp(X_pgd, 0, 1)
@@ -35,10 +36,11 @@ def attack_fgsm(model, X, y, epsilon=8.0/255.0):
     X_fgsm.requires_grad_()
     
     with torch.enable_grad():
-        logits = model(X_fgsm)
-        loss = ce_loss(logits, y)
+        with torch.cuda.amp.autocast():
+            logits = model(X_fgsm)
+            loss = ce_loss(logits, y)
         
-    grad = torch.autograd.grad(loss, [X_fgsm])[0]
+    grad = torch.autograd.grad(loss.float(), [X_fgsm])[0]
     X_fgsm = X_fgsm.detach() + epsilon * torch.sign(grad.detach())
     X_fgsm = torch.clamp(X_fgsm, 0, 1)
         
@@ -52,15 +54,16 @@ def attack_cw_linf(model, X, y, attack_iters=20, step_size=2.0/255.0, epsilon=8.
     for _ in range(attack_iters):
         X_cw.requires_grad_()
         with torch.enable_grad():
-            logits = model(X_cw)
-            target_logits = logits[torch.arange(X.shape[0]), y]
-            logits_without_target = logits.clone()
-            logits_without_target[torch.arange(X.shape[0]), y] = -1e4
-            max_other_logits = logits_without_target.max(dim=1)[0]
-            # C&W Margin Loss
-            loss = torch.clamp(max_other_logits - target_logits, min=-50.0).sum()
+            with torch.cuda.amp.autocast():
+                logits = model(X_cw)
+                target_logits = logits[torch.arange(X.shape[0]), y]
+                logits_without_target = logits.clone()
+                logits_without_target[torch.arange(X.shape[0]), y] = -1e4
+                max_other_logits = logits_without_target.max(dim=1)[0]
+                # C&W Margin Loss
+                loss = torch.clamp(max_other_logits - target_logits, min=-50.0).sum()
             
-        grad = torch.autograd.grad(loss, [X_cw])[0]
+        grad = torch.autograd.grad(loss.float(), [X_cw])[0]
         X_cw = X_cw.detach() + step_size * torch.sign(grad.detach())
         X_cw = torch.min(torch.max(X_cw, X - epsilon), X + epsilon)
         X_cw = torch.clamp(X_cw, 0, 1)
@@ -82,10 +85,11 @@ def eval_robustness(model, testloader, device):
         X_cw = attack_cw_linf(model, X, y, attack_iters=20, step_size=2.0/255.0, epsilon=8.0/255.0)
         
         with torch.no_grad():
-            logits = model(X)
-            logits_pgd = model(X_pgd)
-            logits_fgsm = model(X_fgsm)
-            logits_cw = model(X_cw)
+            with torch.cuda.amp.autocast():
+                logits = model(X)
+                logits_pgd = model(X_pgd)
+                logits_fgsm = model(X_fgsm)
+                logits_cw = model(X_cw)
             
         preds = torch.argmax(logits, dim=1)
         preds_pgd = torch.argmax(logits_pgd, dim=1)
@@ -96,6 +100,10 @@ def eval_robustness(model, testloader, device):
         test_accs_adv.append((preds_pgd == y).cpu().numpy())
         test_accs_fgsm.append((preds_fgsm == y).cpu().numpy())
         test_accs_cw.append((preds_cw == y).cpu().numpy())
+
+        # Free attack tensors between batches
+        del X_pgd, X_fgsm, X_cw, logits, logits_pgd, logits_fgsm, logits_cw
+        torch.cuda.empty_cache()
         
     clean_acc = np.mean(np.concatenate(test_accs))
     robust_acc_pgd = np.mean(np.concatenate(test_accs_adv))
@@ -105,10 +113,9 @@ def eval_robustness(model, testloader, device):
     # AutoAttack
     if AutoAttack is not None:
         autoattack = AutoAttack(model, norm='Linf', eps=8/255.0, version='standard', device=device)
-        # Suppress long logs from AA
         autoattack.seed = 0
         
-        # Collect all batches for AA
+        # Collect all batches on CPU to avoid VRAM spike
         x_total = []
         y_total = []
         for X, y in testloader:
@@ -117,16 +124,20 @@ def eval_robustness(model, testloader, device):
         x_total = torch.cat(x_total, 0)
         y_total = torch.cat(y_total, 0)
         
-        x_adv_aa = autoattack.run_standard_evaluation(x_total, y_total, bs=500)
+        # Run AA with small batch size to limit VRAM
+        x_adv_aa = autoattack.run_standard_evaluation(x_total, y_total, bs=250)
         
         with torch.no_grad():
             from torch.utils.data import TensorDataset
-            aa_loader = torch.utils.data.DataLoader(TensorDataset(x_adv_aa, y_total), batch_size=500, shuffle=False)
+            aa_loader = torch.utils.data.DataLoader(TensorDataset(x_adv_aa, y_total), batch_size=250, shuffle=False)
             aa_correct = 0
             for X_aa, y_aa in aa_loader:
                 X_aa, y_aa = X_aa.to(device), y_aa.to(device)
-                logits_aa = model(X_aa)
+                with torch.cuda.amp.autocast():
+                    logits_aa = model(X_aa)
                 aa_correct += (logits_aa.argmax(1) == y_aa).sum().item()
+                del X_aa, y_aa, logits_aa
+                torch.cuda.empty_cache()
             robust_acc_aa = aa_correct / len(y_total)
     else:
         print("AutoAttack library not found. Returning 0.0 for AA accuracy.")
