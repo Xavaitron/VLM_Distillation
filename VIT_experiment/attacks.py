@@ -17,7 +17,7 @@ def attack_pgd(model, X, y, attack_iters=20, step_size=2.0/255.0, epsilon=8.0/25
     for _ in range(attack_iters):
         X_pgd.requires_grad_()
         with torch.enable_grad():
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast('cuda'):
                 logits = model(X_pgd)
                 loss = ce_loss(logits, y)
         
@@ -36,7 +36,7 @@ def attack_fgsm(model, X, y, epsilon=8.0/255.0):
     X_fgsm.requires_grad_()
     
     with torch.enable_grad():
-        with torch.cuda.amp.autocast():
+        with torch.amp.autocast('cuda'):
             logits = model(X_fgsm)
             loss = ce_loss(logits, y)
         
@@ -54,7 +54,7 @@ def attack_cw_linf(model, X, y, attack_iters=20, step_size=2.0/255.0, epsilon=8.
     for _ in range(attack_iters):
         X_cw.requires_grad_()
         with torch.enable_grad():
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast('cuda'):
                 logits = model(X_cw)
                 target_logits = logits[torch.arange(X.shape[0]), y]
                 logits_without_target = logits.clone()
@@ -85,7 +85,7 @@ def eval_robustness(model, testloader, device):
         X_cw = attack_cw_linf(model, X, y, attack_iters=20, step_size=2.0/255.0, epsilon=8.0/255.0)
         
         with torch.no_grad():
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast('cuda'):
                 logits = model(X)
                 logits_pgd = model(X_pgd)
                 logits_fgsm = model(X_fgsm)
@@ -133,7 +133,7 @@ def eval_robustness(model, testloader, device):
             aa_correct = 0
             for X_aa, y_aa in aa_loader:
                 X_aa, y_aa = X_aa.to(device), y_aa.to(device)
-                with torch.cuda.amp.autocast():
+                with torch.amp.autocast('cuda'):
                     logits_aa = model(X_aa)
                 aa_correct += (logits_aa.argmax(1) == y_aa).sum().item()
                 del X_aa, y_aa, logits_aa

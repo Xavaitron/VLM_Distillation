@@ -20,7 +20,7 @@ def adaad_inner_loss(model, teacher_model, x_natural, step_size=2/255.0, steps=1
     for _ in range(steps):
         x_adv.requires_grad_()
         with torch.enable_grad():
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast('cuda'):
                 loss_kl = criterion_kl(F.log_softmax(model(x_adv), dim=1),
                                        F.softmax(teacher_model(x_adv), dim=1))
                 loss_kl = torch.sum(loss_kl)
@@ -46,7 +46,7 @@ def igdm_inner_loss(model, teacher_model, x_natural, step_size=2/255.0, steps=10
         delta = x_adv - x_natural
         x_adv.requires_grad_()
         with torch.enable_grad():
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast('cuda'):
                 teacher_minus = teacher_model(x_adv - 2 * delta)
                 student_minus = model(x_adv - 2 * delta)
 

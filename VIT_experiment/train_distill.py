@@ -8,7 +8,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from torch.cuda.amp import GradScaler, autocast
+from torch.amp import autocast
+from torch.cuda.amp import GradScaler
 from dataset import get_cifar100_dataloaders
 from models import get_cnn_student, get_cnn_teacher, get_vit_student, get_vit_teacher
 from losses import kd_loss, adaad_inner_loss, igdm_inner_loss
@@ -123,7 +124,7 @@ def main():
 
             if args.method == 'kd':
                 # Normal KD: Only matches clean outputs
-                with autocast():
+                with autocast('cuda'):
                     student_logits = student(X)
                     with torch.no_grad():
                         teacher_logits = teacher(X)
@@ -134,7 +135,7 @@ def main():
                 X_adv = adaad_inner_loss(student, teacher, X, step_size=2/255.0, steps=10, epsilon=8/255.0)
                 
                 # Forward passes with AMP
-                with autocast():
+                with autocast('cuda'):
                     student_clean = student(X)
                     student_adv = student(X_adv)
                     with torch.no_grad():
@@ -156,7 +157,7 @@ def main():
                 # Compute IGDM perturbation
                 delta = X_adv - X
                 
-                with autocast():
+                with autocast('cuda'):
                     with torch.no_grad():
                         teacher_clean = teacher(X)
                         teacher_adv = teacher(X_adv)
@@ -216,7 +217,7 @@ def main():
             student.eval()
             correct = 0
             with torch.no_grad():
-                with autocast():
+                with autocast('cuda'):
                     for X_test, y_test in testloader:
                         X_test, y_test = X_test.to(device), y_test.to(device)
                         correct += (student(X_test).argmax(1) == y_test).sum().item()
