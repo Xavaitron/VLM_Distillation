@@ -6,4 +6,7 @@ Date               , Architecture, Method    , Teacher                      , Ba
 2026-03-28 16:57:31, VIT         , KD        , Wang2023Better_WRN-28-10     ,         64, 200   ,         41.84,         0.47,          0.01,        0.00,       0.00
 2026-03-31 02:03:04, VIT         , ADAAD     , Wang2023Better_WRN-28-10     ,         64, 200   ,         38.02,        14.95,         14.05,       10.92,       9.73
 2026-04-01 18:45:20, VIT         , ADAAD_IGDM, Wang2023Better_WRN-28-10     ,         64, 200   ,         32.80,        16.96,         16.65,       13.26,      12.44
+2026-04-05 06:56:47, VIT         , TEACHER   , Debenedetti2022Light_XCiT-S12,         32, -     ,         67.25,        40.31,         37.50,       33.69,      32.69
 2026-04-02 16:58:12, VIT         , KD        , Debenedetti2022Light_XCiT-S12,        256, 200   ,         39.86,         1.77,          0.29,        0.38,       0.06
+2026-04-07 03:50:11, VIT         , ADAAD     , Debenedetti2022Light_XCiT-S12,        128, 200   ,         38.02,        16.23,         15.56,       12.38,      11.48
+2026-04-07 12:42:45, VIT         , ADAAD_IGDM, Debenedetti2022Light_XCiT-S12,        128, 200   ,         32.90,        17.56,         17.26,       13.80,      13.30
